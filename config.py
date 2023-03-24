@@ -14,3 +14,6 @@ TESTSET_IMGS = Path("datasets/diaretdb1_v_1_1/TESTSET/ddb1_fundusimages")
 # Path para as imagens de fundoscopia de teste e para o diretorio de mascaras de teste
 TRAINSET_DIR_MASKS = Path("datasets/diaretdb1_v_1_1/TRAINSET/ddb1_groundtruth")
 TESTSET_DIR_MASKS = Path("datasets/diaretdb1_v_1_1/TESTSET/ddb1_groundtruth")
+
+# Lesions:
+LESIONS = {'EX': 0, 'HE': 1, 'MA': 3, 'SE': 4}

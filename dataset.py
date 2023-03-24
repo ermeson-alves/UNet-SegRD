@@ -42,10 +42,7 @@ def adaptar_dataset(root_dir: Path, dir_fundus_imgs: Path, dir_groundtruths_imgs
             mask = pil_loader(dir_groundtruths_imgs/dir_masks/label)
             mask.save(path_base/'ddb1_groundtruth'/dir_masks/label)
         print("Nova pasta com mascaras de lesões criada.")
-# TESTSET:
-adaptar_dataset(ROOT_DATASET_PATH, IMGS_FUNDUS_PATH, MASKS_DIR_PATH, ANNOTATIONS_TEST_PATH)
-# TRAINSET:
-adaptar_dataset(ROOT_DATASET_PATH, IMGS_FUNDUS_PATH, MASKS_DIR_PATH, ANNOTATIONS_TRAIN_PATH)
+
 
 
 

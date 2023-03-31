@@ -1,4 +1,4 @@
-# from torch.utils.data import Dataset
+from torch.utils.data import Dataset
 import pandas as pd
 from PIL import Image
 import numpy as np
@@ -47,67 +47,67 @@ def adaptar_dataset(root_dir: Path, dir_fundus_imgs: Path, dir_groundtruths_imgs
 
 
 
-# class DIARETDBDataset(Dataset):
-#     def __init__(self, images_paths:Path, masks_paths:Path, class_id=0, transform=None):
-#         """
-#         Args:
-#             image_paths: paths to the original images []
-#             mask_paths: paths to the mask images, [[]]
-#             class_id: id of lesions, 0:ex, 1:he, 2:ma, 3:se
-#             class_id: indice auxiliar para acessar um diretorio de lesões (exsudatos, ma's, hemorragias...) em masks_path. 
-#             annotations_file: arquivo .txt com anotação de labels das imagens
-#         """
-#         # self.img_labels = pd.read_csv(annotations_file, header=None)
-#         # self.masks_list_dir = sorted(dir.name for dir in masks_path.iterdir() if dir.is_dir())
-#         self.class_id = class_id
-#         self.transform = transform
-#         self.image_paths = []
-#         self.masks_paths = []
-#         self.images = []
-#         self.masks = []
+class DIARETDBDataset(Dataset):
+    def __init__(self, images_paths:Path, masks_paths:Path, class_id=0, transform=None):
+        """
+        Args:
+            image_paths: paths to the original images []
+            mask_paths: paths to the mask images, [[]]
+            class_id: id of lesions, 0:ex, 1:he, 2:ma, 3:se
+            class_id: indice auxiliar para acessar um diretorio de lesões (exsudatos, ma's, hemorragias...) em masks_path. 
+            annotations_file: arquivo .txt com anotação de labels das imagens
+        """
+        # self.img_labels = pd.read_csv(annotations_file, header=None)
+        # self.masks_list_dir = sorted(dir.name for dir in masks_path.iterdir() if dir.is_dir())
+        self.class_id = class_id
+        self.transform = transform
+        self.image_paths = []
+        self.masks_paths = []
+        self.images = []
+        self.masks = []
         
-#         if self.masks_paths is not None:
-#           # Esse código considera que para cada imagem existe uma mascara
-#           for img_path, mask_path4 in zip(images_paths, masks_paths):
-#             #   label = self.img_labels.iloc[i,0]
-#             #   img_path = images_path / label
-#             #   mask_path = masks_path / self.masks_list_dir[self.class_id] / label
-#             mask_path = mask_path4[class_id]
-#             self.image_paths.append(img_path)
-#             self.masks_paths.append(mask_path)
-#             self.images.append(pil_loader(img_path))
-#             self.masks.append(pil_loader(mask_path, True))
+        if self.masks_paths is not None:
+          # Esse código considera que para cada imagem existe uma mascara
+          for img_path, mask_path4 in zip(images_paths, masks_paths):
+            #   label = self.img_labels.iloc[i,0]
+            #   img_path = images_path / label
+            #   mask_path = masks_path / self.masks_list_dir[self.class_id] / label
+            mask_path = mask_path4[class_id]
+            self.image_paths.append(img_path)
+            self.masks_paths.append(mask_path)
+            self.images.append(pil_loader(img_path))
+            self.masks.append(pil_loader(mask_path, True))
 
         
-#     def __len__(self):
-#         return len(self.image_paths)
+    def __len__(self):
+        return len(self.image_paths)
 
-#     def __getitem__(self, idx):
-#         """Retorna a imagem e suas mascaras vazia e cheia, aplica transformações se houver"""
-#         # array com imagem e mascara
-#         info = [self.images[idx]]
-#         if self.masks_paths:
-#           info.append(self.masks[idx])
-#         if self.transform:
-#           info = self.transform(info)
+    def __getitem__(self, idx):
+        """Retorna a imagem e suas mascaras vazia e cheia, aplica transformações se houver"""
+        # array com imagem e mascara
+        info = [self.images[idx]]
+        if self.masks_paths:
+          info.append(self.masks[idx])
+        if self.transform:
+          info = self.transform(info)
 
-#         # Imagem ndarray
-#         inputs = np.array(info[0])
+        # Imagem ndarray
+        inputs = np.array(info[0])
 
-#         if inputs.shape[2] == 3:
-#           # transpoem as imagens e normaliza os pixels
-#           inputs = np.transpose(np.array(info[0]), (2,0,1))
-#           inputs = inputs / 255.
+        if inputs.shape[2] == 3:
+          # transpoem as imagens e normaliza os pixels
+          inputs = np.transpose(np.array(info[0]), (2,0,1))
+          inputs = inputs / 255.
         
-#         if len(info)>1:
-#         #   mask = np.array(info[1])[:,:,0] / 255.
-#           mask = np.array(info[1]) / 255.
-#           empty_mask = 1 - mask
-#           masks = np.array([empty_mask,mask])
+        if len(info)>1:
+        #   mask = np.array(info[1])[:,:,0] / 255.
+          mask = np.array(info[1]) / 255.
+          empty_mask = 1 - mask
+          masks = np.array([empty_mask,mask])
 
-#           return inputs, masks
-#         else:
-#           return inputs
+          return inputs, masks
+        else:
+          return inputs
 
     
 

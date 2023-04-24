@@ -17,3 +17,9 @@ TESTSET_DIR_MASKS = Path("datasets/diaretdb1_v_1_1/TESTSET/ddb1_groundtruth")
 
 # Lesions:
 LESIONS = {'EX': 0, 'HE': 1, 'MA': 3, 'SE': 4}
+
+
+# Hiperparametros:
+EPOCHS = 1
+BATCH_SIZE = 4
+LEARNING_RATE = 1e-3

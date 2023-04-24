@@ -1,0 +1,8 @@
+/*-env
+**/.python-version
+**/A. Segmentation
+**/diaretdb1_v_1_1
+**/.ipynb_checkpoints
+**/lightning_logs
+**/__pycache__
+.vscode

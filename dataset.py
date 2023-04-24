@@ -1,21 +1,34 @@
 from torch.utils.data import Dataset
+import torch
 import pandas as pd
+import cv2
 from PIL import Image
 import numpy as np
 from pathlib import Path
 import monai
 from config import * 
 
-def pil_loader(image_path,is_mask=False):
+def img_loader(image_path: Path,is_mask=False):
     with open(image_path, 'rb') as f:
-        img = Image.open(f)
-        h, w = img.size
         if not is_mask:
-            return img.resize((h//2, w//2)).convert('RGB')
-            # return img.convert('RGB')
+            img = cv2.cvtColor(cv2.imread(str(image_path)), cv2.COLOR_BGR2RGB)
+            img = cv2.resize(img, (224, 224))
+            img = torch.as_tensor(img)
+            img = img.permute(2,0,1)
+            # img = Image.fromarray(img)
+            return img
         else:
-            return img.resize((h//2, w//2)).convert('L')
-            # return img.convert('L')
+            # mask = Image.open(image_path).resize((224,224)).convert("L")
+            mask = cv2.imread(str(image_path), 0)
+            mask = cv2.resize(mask, (224, 224))
+            mask = cv2.threshold(mask, 240, 255, cv2.THRESH_BINARY)[1]
+            # mask = Image.fromarray(mask)
+            mask = np.expand_dims(mask, 2)  # (H, W, C) -> C=1
+            mask = torch.as_tensor(mask, dtype=torch.uint8)
+            mask = mask.permute(2,0,1)
+
+            return mask
+            
 
 
 def create_dir(path:Path):
@@ -37,10 +50,10 @@ def adaptar_dataset(root_dir: Path, dir_fundus_imgs: Path, dir_groundtruths_imgs
 
         for label in labels[0]:
             # Salvar a imagem correspondente das anotações na pasta de fundoscopias:
-            img_fundus = pil_loader(dir_fundus_imgs/label)
+            img_fundus = img_loader(dir_fundus_imgs/label)
             img_fundus.save(path_base/dir_fundus_imgs.name/label)
             # Salvar a mascara:
-            mask = pil_loader(dir_groundtruths_imgs/dir_masks/label)
+            mask = img_loader(dir_groundtruths_imgs/dir_masks/label)
             mask.save(path_base/'ddb1_groundtruth'/dir_masks/label)
         print("Nova pasta com mascaras de lesões criada.")
 
@@ -81,12 +94,33 @@ class DIARETDBDataset(Dataset):
           self.images_paths.append(img_path)
           self.masks_paths.append(mask_path)
         #   print(img_path, mask_path)
-          self.images.append(pil_loader(img_path))
-          self.masks.append(pil_loader(mask_path, True))
+          self.images.append(img_loader(img_path))
+          self.masks.append(img_loader(mask_path, True))
 
 
         assert len(self.images) == len(self.masks)
+    
+    @staticmethod
+    def preprocess(mask_values, pil_img, scale, is_mask):
+        w, h = pil_img.size
+        newW, newH = int(scale * w), int(scale * h)
+        assert newW > 0 and newH > 0, 'Scale is too small, resized images would have no pixel'
+        pil_img = pil_img.resize((newW, newH), resample=Image.NEAREST if is_mask else Image.BICUBIC)
+        img = np.asarray(pil_img)
 
+        if is_mask:
+            pass
+
+        else:
+            if img.ndim == 2:
+                img = img[np.newaxis, ...]
+            else:
+                img = img.transpose((2, 0, 1))
+
+            if (img > 1).any():
+                img = img / 255.0
+
+            return img
     def __len__(self):
         return len(self.images_paths)
 
@@ -97,23 +131,13 @@ class DIARETDBDataset(Dataset):
 
         info.append(self.masks[idx])
         if self.transform:
-          info = self.transform(info)
+            info[0] = self.transform(info[0])
+            info[1] = self.transform(info[1])
 
         # Imagem ndarray
         inputs = np.array(info[0])
-
-        if inputs.shape[2] == 3:
-          # transpoem as imagens e normaliza os pixels
-          inputs = np.transpose(np.array(info[0]), (2,0,1))
-          inputs = inputs / 255.
-        
-        if len(info)>1:
-          mask = np.array(info[1]) / 255.
+        inputs = inputs / 255.
+        mask = np.array(info[1]) / 255.
          
 
-          return inputs, mask
-
-
-    
-
-
+        return {'image':inputs, 'mask':mask }

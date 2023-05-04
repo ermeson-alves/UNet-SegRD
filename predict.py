@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from PIL import Image
 from torchvision import transforms
 
-from dataset import DIARETDBDataset
+from utils.dataset import DIARETDBDataset
 from unet import UNet
 from utils import plot_img_and_mask
 import matplotlib.pyplot as plt

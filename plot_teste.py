@@ -1,7 +1,7 @@
 import utils
-from dataset import *
+from utils.dataset import *
 from torch.utils.data import DataLoader
-from config import *
+from utils.config import *
 import numpy as np
 import torchvision.transforms as transforms
 
@@ -24,7 +24,10 @@ transformations = {
                            ])
 }
 
-train_set = DIARETDBDataset(IMGS_FUNDUS_PATH, MASKS_DIR_PATH, 0, transform=transformations['train'])
+# train_set = utils.DIARETDBDataset(IMGS_FUNDUS_PATH, MASKS_DIR_PATH, 0, transform=transformations['train'])
+train_set = utils.IDRIDDataset(Path("datasets/A. Segmentation/1. Original Images/a. Training Set"),
+                               Path("datasets/A. Segmentation/2. All Segmentation Groundtruths/a. Training Set"),
+                               2)
 train_loader = DataLoader(train_set, batch_size = 4, shuffle=True)
 
 batch = next(iter(train_loader))

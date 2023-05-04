@@ -18,13 +18,13 @@ from tqdm import tqdm
 import wandb
 from evaluate import evaluate
 from unet import UNet
-from dataset import DIARETDBDataset
+from utils.dataset import DIARETDBDataset
 from utils.dice_score import dice_loss
 
-from config import *
+from utils.config import *
 dir_img = TRAINSET_IMGS
-# analisar qual pasta de mascaras escolher
 dir_mask = TRAINSET_DIR_MASKS 
+# Diretorio de checkpoints
 dir_checkpoint = Path("./checkpoints")
 
 

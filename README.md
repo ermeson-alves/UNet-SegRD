@@ -40,5 +40,4 @@ requirements.txt<br><br>
     Otimizar hiperparametros
     Teste
 
-Obs: Se trabalhar com dataset IDRID, no diretorio de mascaras excluir a strig "x. " antes de cada nome de lesão!
-     
+Obs: Em fase de adaptação de código de dataset

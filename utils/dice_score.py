@@ -8,9 +8,11 @@ def dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: bool = False, 
     assert input.dim() == 3 or not reduce_batch_first
     print(f"{input.size()}-----{target.size()}")
 
+    '''Isso é usado para verificar se o cálculo do coeficiente de Dice será feito para cada máscara 
+    individualmente ou para todas as máscaras de um lote'''
     sum_dim = (-1, -2) if input.dim() == 2 or not reduce_batch_first else (-1, -2, -3)
     # fig, axs = plt.subplots(1,2)
-    # axs[0].imshow(input.permute(input()))
+    # axs[0].imshow()
     inter = 2 * (input * target).sum(dim=sum_dim)
     sets_sum = input.sum(dim=sum_dim) + target.sum(dim=sum_dim)
     sets_sum = torch.where(sets_sum == 0, inter, sets_sum)

@@ -1,16 +1,35 @@
 """Este arquivo serve para aplicar deterimandas transformações no conjunto de dados de tal modo que ele se torne como as funções do
-pytorch esperam que ele seja."""
+pytorch esperam que ele seja.
+
+Um ponto importante sobre transformações pytorch é que para transformações reproduzíveis entre chamadas, 
+se pode usar transformações funcionais (util em segmentação semantica).
+
+O Double nessas classes significa que se destina a um conjunto de dados com pares de entrada-destino.
+"""
 
 
 from typing import List, Callable, Tuple
-
+import torch
 import numpy as np
 import albumentations as A
+from skimage.util import crop
 # Legado, tentar adaptação
 # from sklearn.externals._pilutil import bytescale
 
-from skimage.util import crop
+def get_mean_and_std(dataloader):
+    channels_sum, channels_squared_sum, num_batches = 0, 0, 0
+    for data in dataloader:
+        # Mean over batch, height and width, but not over the channels
+        channels_sum += torch.mean(data['image'], dim=[0,2,3])
+        channels_squared_sum += torch.mean(data['image']**2, dim=[0,2,3])
+        num_batches += 1
+    
+    mean = channels_sum / num_batches
 
+    # std = sqrt(E[X^2] - (E[X])^2)
+    std = (channels_squared_sum / num_batches - mean ** 2) ** 0.5
+
+    return mean, std
 
 def normalize_01(inp: np.ndarray):
     """Squash image input to the value range [0, 1] (no clipping)"""

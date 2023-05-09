@@ -27,7 +27,15 @@ transformations = {
 # train_set = utils.DIARETDBDataset(IMGS_FUNDUS_PATH, MASKS_DIR_PATH, 0, transform=transformations['train'])
 train_set = utils.IDRIDDataset(Path("datasets/A. Segmentation/1. Original Images/a. Training Set"),
                                Path("datasets/A. Segmentation/2. All Segmentation Groundtruths/a. Training Set"),
-                               2)
+                               2,True)
+
+# print de uma amostra
+x, y = train_set[0]['image'], train_set[0]['mask']
+print(f'x = shape: {x.shape}; type: {x.dtype}')
+print(f'x = min: {x.min()}; max: {x.max()}')
+print(f'y = shape: {y.shape}; class: {y.unique()}; type: {y.dtype}')
+
+
 train_loader = DataLoader(train_set, batch_size = 4, shuffle=True)
 
 batch = next(iter(train_loader))

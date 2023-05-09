@@ -18,7 +18,7 @@ from tqdm import tqdm
 import wandb
 from evaluate import evaluate
 from unet import UNet
-from utils.dataset import DIARETDBDataset
+from utils.dataset import DIARETDBDataset, IDRIDDataset
 from utils.dice_score import dice_loss
 
 from utils.config import *
@@ -63,7 +63,7 @@ def train_model(
         gradient_clipping: float = 1.0,
 ):
     # 1. Create dataset
-    train_dataset = DIARETDBDataset(TRAINSET_IMGS, TRAINSET_DIR_MASKS, 0, transform=transformations['train'])
+    train_dataset = IDRIDDataset(TRAINSET_IMGS, TRAINSET_DIR_MASKS, 2, transform=True)
 
     # 2. Split into train / validation partitions
     n_val = int(len(train_dataset) * val_percent)

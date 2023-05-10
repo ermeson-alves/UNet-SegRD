@@ -115,7 +115,7 @@ def train_model(
                     'the images are loaded correctly.'
 
                 images = images.to(device=device, dtype=torch.float32, memory_format=torch.channels_last)
-                true_masks = true_masks.to(device=device, dtype=torch.long).squeeze()
+                true_masks = true_masks.to(device=device, dtype=torch.long)
 
                 print(f"b_imgs shape: {batch['image'].shape} ----- b_masks shape: {batch['mask'].shape}")
                 with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=amp):

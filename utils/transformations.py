@@ -7,14 +7,16 @@ se pode usar transformações funcionais (util em segmentação semantica).
 O Double nessas classes significa que se destina a um conjunto de dados com pares de entrada-destino.
 """
 
-
 from typing import List, Callable, Tuple
 import torch
 import numpy as np
 import albumentations as A
 from skimage.util import crop
+import torchvision.transforms.functional as TF
+import random
 # Legado, tentar adaptação
 # from sklearn.externals._pilutil import bytescale
+
 
 def get_mean_and_std(dataloader):
     channels_sum, channels_squared_sum, num_batches = 0, 0, 0
@@ -52,12 +54,12 @@ def re_normalize(inp: np.ndarray,
         inp_out = ((inp * np.std(inp)) + np.mean(inp)) * 255
         return inp_out
 
-def create_dense_target(tar: np.ndarray):
-    classes = np.unique(tar)
-    dummy = np.zeros_like(tar)
+def create_dense_target(target: np.ndarray):
+    classes = np.unique(target)
+    dummy = np.zeros_like(target)
     for idx, value in enumerate(classes):
-        mask = np.where(tar == value)
-        dummy[mask] = idx
+        idx_classes =  np.asarray(target==value).nonzero()
+        dummy[idx_classes] = idx
 
     return dummy
 
@@ -76,9 +78,6 @@ def center_crop_to_size(x: np.ndarray,
     params_tuple = tuple([(i, i) for i in params_list])
     cropped_image = crop(x, crop_width=params_tuple, copy=copy)
     return cropped_image
-
-
-
 
 def random_flip(inp: np.ndarray, tar: np.ndarray, ndim_spatial: int):
     flip_dims = [np.random.randint(low=0, high=2) for dim in range(ndim_spatial)]

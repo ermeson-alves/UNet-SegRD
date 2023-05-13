@@ -18,7 +18,6 @@ def dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: bool = False, 
     sets_sum = torch.where(sets_sum == 0, inter, sets_sum)
 
     dice = (inter + epsilon) / (sets_sum + epsilon)
-    print(f"Finalizou dice_coeff(), resultado: {dice}")
     return dice.mean()
 
 

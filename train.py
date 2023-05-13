@@ -20,11 +20,14 @@ from evaluate import evaluate
 from unet import UNet
 from utils.dataset import DIARETDBDataset, IDRIDDataset
 from utils.dice_score import dice_loss
+from utils.transformations import *
 
 from utils.config import *
 dir_img = TRAINSET_IMGS
 dir_mask = TRAINSET_DIR_MASKS 
 # Diretorio de checkpoints
+if not Path("./checkpoints").exists():
+    Path("./checkpoints").mkdir()
 dir_checkpoint = Path("./checkpoints")
 
 
@@ -63,7 +66,15 @@ def train_model(
         gradient_clipping: float = 1.0,
 ):
     # 1. Create dataset
-    train_dataset = IDRIDDataset(TRAINSET_IMGS, TRAINSET_DIR_MASKS, 2, transform=True)
+    import albumentations
+    # training transformations and augmentations
+    transforms_training = ComposeDouble([
+        AlbuSeg2d(albumentations.HorizontalFlip(p=0.5)),
+        FunctionWrapperDouble(create_dense_target, input=False, target=True),
+        FunctionWrapperDouble(np.moveaxis, input=True, target=False, source=-1, destination=0),
+        FunctionWrapperDouble(normalize_01),
+    ])
+    train_dataset = IDRIDDataset(TRAINSET_IMGS, TRAINSET_DIR_MASKS, 2, transform=transforms_training)
 
     # 2. Split into train / validation partitions
     n_val = int(len(train_dataset) * val_percent)
@@ -117,14 +128,13 @@ def train_model(
                 images = images.to(device=device, dtype=torch.float32, memory_format=torch.channels_last)
                 true_masks = true_masks.to(device=device, dtype=torch.long).squeeze()
 
-                print(f"b_imgs shape: {batch['image'].shape} ----- b_masks shape: {batch['mask'].shape}")
+                print(f"b_imgs shape: {images.shape} ----- b_masks shape: {true_masks.shape}")
                 with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=amp):
                     masks_pred = model(images)
                     print(f"b_masks_pred shape: {masks_pred.shape}")
                     if model.n_classes == 1:
                         loss = criterion(masks_pred.squeeze(1), true_masks.float())
                         loss += dice_loss(F.sigmoid(masks_pred.squeeze(1)), true_masks.float(), multiclass=False)
-                        # print(f"Input para dice_coeff(): {F.sigmoid(masks_pred.squeeze(1))}")
                     else:
                         loss = criterion(masks_pred, true_masks)
                         loss += dice_loss(

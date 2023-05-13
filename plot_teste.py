@@ -1,33 +1,28 @@
 import utils
-from utils.dataset import *
 from torch.utils.data import DataLoader
 from utils.config import *
-import numpy as np
-import torchvision.transforms as transforms
+from utils.transformations import *
+import albumentations
 
-transformations = {
-    'test': transforms.Compose([
-                        # transforms.ToPILImage(),
-                        transforms.Resize((224,224)),
-#                         transforms.Grayscale(1),
-                        # transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-                        # transforms.ToTensor()]),
-                        ]),
-     'train': transforms.Compose([
-                        #    transforms.ToPILImage(),
-                           transforms.Resize(size=(224,224)),
-                        #    transforms.RandomRotation(degrees = 15), 
-                        #    transforms.RandomHorizontalFlip(p = 0.005),
-                        #    transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-                        #    transforms.Grayscale(1),
-                        #    transforms.ToTensor()
-                           ])
-}
 
+
+# training transformations and augmentations
+transforms_training = ComposeDouble([
+    AlbuSeg2d(albumentations.HorizontalFlip(p=0.5)),
+    FunctionWrapperDouble(create_dense_target, input=False, target=True),
+    FunctionWrapperDouble(np.moveaxis, input=True, target=False, source=-1, destination=0),
+    FunctionWrapperDouble(normalize_01),
+])
+
+
+# # validation transformations
+# transforms_validation = ComposeDouble([
+#     FunctionWrapperDouble(create_dense_target, input=False, target=True),
+#     FunctionWrapperDouble(np.moveaxis, input=True, target=False, source=-1, destination=0),
+#     FunctionWrapperDouble(normalize_01)
+# ])
 # train_set = utils.DIARETDBDataset(IMGS_FUNDUS_PATH, MASKS_DIR_PATH, 0, transform=transformations['train'])
-train_set = utils.IDRIDDataset(TRAINSET_IMGS,
-                               TRAINSET_DIR_MASKS,
-                               2,True)
+train_set = utils.IDRIDDataset(TRAINSET_IMGS, TRAINSET_DIR_MASKS, 2, transform=transforms_training)
 
 # print de uma amostra
 x, y = train_set[0]['image'], train_set[0]['mask']

@@ -5,10 +5,10 @@ import pandas as pd
 import cv2
 import numpy as np
 from pathlib import Path
-import monai
 from .config import * 
 import random
 from .transformations import *
+# import monai
 
 def img_loader(image_path: Path,is_mask=False, dataset='IDRID'):
     with open(image_path, 'rb') as f:
@@ -75,25 +75,30 @@ def adaptar_dataset(root_dir: Path, dir_fundus_imgs: Path, dir_groundtruths_imgs
         print("Nova pasta com mascaras de lesões criada.")
 
 
-if not (Path("datasets/diaretdb1_v_1_1")):
-    url = "https://www.it.lut.fi/project/imageret/diaretdb1/diaretdb1_v_1_1.zip"
-    monai.apps.download_and_extract(url, output_dir="./datasets")
-    # TESTSET:
-    adaptar_dataset(Path("datasets/diaretdb1_v_1_1"), IMGS_FUNDUS_PATH, MASKS_DIR_PATH, ANNOTATIONS_TEST_PATH)
-    # TRAINSET:
-    adaptar_dataset(Path("datasets/diaretdb1_v_1_1"), IMGS_FUNDUS_PATH, MASKS_DIR_PATH, ANNOTATIONS_TRAIN_PATH)
+# if not Path("datasets/diaretdb1_v_1_1").exists():
+#     url = "https://www.it.lut.fi/project/imageret/diaretdb1/diaretdb1_v_1_1.zip"
+#     monai.apps.download_and_extract(url, output_dir="./datasets")
+#     # TESTSET:
+#     adaptar_dataset(Path("datasets/diaretdb1_v_1_1"), IMGS_FUNDUS_PATH, MASKS_DIR_PATH, ANNOTATIONS_TEST_PATH)
+#     # TRAINSET:
+#     adaptar_dataset(Path("datasets/diaretdb1_v_1_1"), IMGS_FUNDUS_PATH, MASKS_DIR_PATH, ANNOTATIONS_TRAIN_PATH)
 
 
 class DIARETDBDataset(Dataset):
     def __init__(self, images_dir:Path, masks_dir:Path, class_id=0, transform=None):
         """
+          Antes de usar essa classe para o DIARETDB1 é necessário se certificar que as variaveis globais de paths do
+        DIARETDBestão descomentadas em config.py e que as mesmas para os paths do IDRID estão comentadas, além disso é preciso
+        adaptar o dataset com a função adaptar_dataset().
+          Vale resaltar também que o link de download https://www.it.lut.fi/project/imageret/diaretdb1/diaretdb1_v_1_1.zip
+        atualmente, 11/05/2023, não está funcionando, talvez por estar fora do ar.
+
         Args:
             image_dir: Path para o diretório de fundoscopias
             mask_dir: Path para o diretório de diretórios de mascaras
             class_id: indice auxiliar para acessar um diretorio de lesões (exsudatos, ma's, hemorragias...) em masks_path. 
         """
-        # self.img_labels = pd.read_csv(annotations_file, header=None)
-        # self.masks_list_dir = sorted(dir.name for dir in masks_path.iterdir() if dir.is_dir())
+
         self.images_dir = images_dir
         self.masks_dir = masks_dir
         self.class_id = class_id
@@ -126,7 +131,7 @@ class DIARETDBDataset(Dataset):
         true_mask = self.masks[idx]
 
         if self.transform: # conferir se a transformação deve ser aplicada assim mesmo!
-            # CORRIGIR!
+            # CORRIGIR!!!!!
             input, true_mask = self.transform(input, true_mask)
 
         # Imagem ndarray
@@ -139,7 +144,7 @@ class DIARETDBDataset(Dataset):
 
 
 class IDRIDDataset(Dataset):
-    def __init__(self, images_dir: Path, masks_dir: Path, class_id=0, train_transform=None):
+    def __init__(self, images_dir: Path, masks_dir: Path, class_id=0, transform=None):
         super().__init__()
         """
         Args:
@@ -150,7 +155,7 @@ class IDRIDDataset(Dataset):
         self.images_dir = images_dir
         self.masks_dir = masks_dir
         self.class_id = class_id
-        self.train_transform = train_transform
+        self.transform = transform
         self.images_paths = []
         self.masks_paths = []
         self.images = []
@@ -160,77 +165,72 @@ class IDRIDDataset(Dataset):
         mask_path4 = sorted(masks_dir.iterdir())[class_id]
 
         for img_path in sorted(images_dir.glob('*.jpg')):
-          mask_path = mask_path4 / (img_path.stem+'_'+LESIONS_IDRID[class_id]+'.tif')
-          self.images_paths.append(img_path)
-          self.masks_paths.append(mask_path)
-        #   print(img_path, mask_path)
-          self.images.append(img_loader(img_path,dataset='IDRID'))
-          self.masks.append(img_loader(mask_path,is_mask=True, dataset='IDRID'))
+          # Essa condicional atua no fato de que não há a mesma quantidade de mascara por lesão
+          if Path(mask_path4 / (img_path.stem+'_'+LESIONS_IDRID[class_id]+'.tif')).exists():
+            mask_path = mask_path4 / (img_path.stem+'_'+LESIONS_IDRID[class_id]+'.tif')
+            self.images_paths.append(img_path)
+            self.masks_paths.append(mask_path)
+            # print(img_path,"\t\t", mask_path)
+            self.images.append(img_loader(img_path,dataset='IDRID'))
+            self.masks.append(img_loader(mask_path,is_mask=True, dataset='IDRID'))
 
     def __len__(self):
         assert len(self.images_paths) == len(self.masks_paths)
         return len(self.images_paths) 
     
     """Inspirado em: https://medium.com/@janwinkler91/pytorch-creating-a-custom-dataset-class-with-specific-data-transformations-for-semantic-69c1037ab260"""
-    def train_seg_transforms(self, input: np.array, target: np.array):
-        """Args:
-                input: imagem de entrada com size controlado pela img_loader()
-                target: a respectiva mascara para a imagem
-           Returns:
-                float32 tensors
-        """
-        input = normalize_01(input)
-        input = TF.to_tensor(input)
-        target = TF.to_tensor(target)
-        if random.random() > 0.5:
-            # create random angle between 0 and 40 degrees
-            angle = random.randint(0, 40)
-            # apply to both input and target patch
-            input = TF.rotate(input, angle)
-            target = TF.rotate(target, angle)
+    # def train_seg_transforms(self, input: np.array, target: np.array):
+    #     """Args:
+    #             input: imagem de entrada com size controlado pela img_loader()
+    #             target: a respectiva mascara para a imagem
+    #        Returns:
+    #             float32 tensors
+    #     """
+    #     input = normalize_01(input)
+    #     input = TF.to_tensor(input)
+    #     target = TF.to_tensor(target)
+    #     if random.random() > 0.5:
+    #         angle = random.randint(0, 40)
+    #         input = TF.rotate(input, angle)
+    #         target = TF.rotate(target, angle)
             
-        if random.random() > 0.5: 
-            # flip the patches horizontally
-            input = TF.hflip(input)
-            target = TF.hflip(target)
+    #     if random.random() > 0.5: 
+    #         # flip the patches horizontally
+    #         input = TF.hflip(input)
+    #         target = TF.hflip(target)
             
-        if random.random() > 0.5: 
-            # flip the patches vertically
-            input = TF.vflip(input)
-            target = TF.vflip(target)
+    #     if random.random() > 0.5: 
+    #         # flip the patches vertically
+    #         input = TF.vflip(input)
+    #         target = TF.vflip(target)
             
-        return input, target
+    #     return input, target
     
 
-    def test_seg_transforms(self, input, target):
-        """
-        Essa função somente cria tensores a partir de numpy.arrays
-        Args:
-                input: imagem de entrada com size controlado pela img_loader()
-                target: a respectiva mascara para a imagem
-           Returns:
-                float32 tensors
-        """
-
-        input = TF.to_tensor(input)
-        target = TF.to_tensor(target)
+    # def test_seg_transforms(self, input, target):
+    #     """
+    #     Essa função somente cria tensores a partir de numpy.arrays
+    #     Args:
+    #             input: imagem de entrada com size controlado pela img_loader()
+    #             target: a respectiva mascara para a imagem
+    #        Returns:
+    #             float32 tensors
+    #     """
+    #     input = TF.to_tensor(input)
+    #     target = TF.to_tensor(target)
         
-        return input, target
+    #     return input, target
 
     def __getitem__(self, idx):
         """Retorna a imagem e sua mascara vazia em forma de tensor, aplica transformações se houver"""
         input = self.images[idx]
         true_mask = self.masks[idx]
 
+        if self.transform: # conferir se a transformação deve ser aplicada assim mesmo!
+            input, true_mask = self.transform(input, true_mask)
+
         # TypeCasting
-        input = input.astype('float32')
-        true_mask = true_mask.astype('float32')
-
-        if self.train_transform: # conferir se a transformação deve ser aplicada assim mesmo!
-            input, true_mask = self.train_seg_transforms(input, true_mask)
-        else:
-            input, true_mask = self.test_seg_transforms(input, true_mask)
-
+        input, true_mask = torch.from_numpy(input).type(torch.float32), torch.from_numpy(true_mask).type(torch.long)
 
         return {'image':input, 'mask':true_mask }   
         

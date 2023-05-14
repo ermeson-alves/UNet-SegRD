@@ -109,10 +109,10 @@ def train_model(
                 images = images.to(device=device, dtype=torch.float32, memory_format=torch.channels_last)
                 true_masks = true_masks.to(device=device, dtype=torch.long)
 
-                print(f"b_imgs shape: {images.shape} ----- b_masks shape: {true_masks.shape}")
+                print(f"\nb_imgs shape: {images.shape} ----- b_masks shape: {true_masks.shape}")
                 with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=amp):
                     masks_pred = model(images)
-                    print(f"b_masks_pred shape: {masks_pred.shape}\tvalues_in_pred: {masks_pred.unique()}")
+                    print(f"\b_masks_pred shape: {masks_pred.shape}\tvalues_in_pred: {masks_pred.unique()}")
                     if model.n_classes == 1:
                         loss = criterion(masks_pred.squeeze(1), true_masks.float())
                         loss += dice_loss(F.sigmoid(masks_pred.squeeze(1)), true_masks.float(), multiclass=False)
@@ -123,7 +123,7 @@ def train_model(
                             F.one_hot(true_masks, model.n_classes).permute(0, 3, 1, 2).float(),
                             multiclass=True
                         )
-
+                    print(f"\nLoss do Batch atual {loss}\n")
                 optimizer.zero_grad(set_to_none=True)
                 grad_scaler.scale(loss).backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), gradient_clipping)

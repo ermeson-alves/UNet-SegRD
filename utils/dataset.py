@@ -230,7 +230,7 @@ class IDRIDDataset(Dataset):
             input, true_mask = self.transform(input, true_mask)
 
         # TypeCasting
-        input, true_mask = torch.from_numpy(input).type(torch.float32), torch.from_numpy(true_mask).type(torch.long)
+        input, true_mask = torch.from_numpy(input).float().contiguous(), torch.from_numpy(true_mask).long().contiguous()
 
         return {'image':input, 'mask':true_mask }   
         

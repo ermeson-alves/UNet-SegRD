@@ -1,26 +1,25 @@
 import argparse
 import logging
-import os
+from pathlib import Path
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-from PIL import Image
+import cv2
 from torchvision import transforms
 
-from utils.dataset import DIARETDBDataset
 from unet import UNet
 from utils import plot_img_and_mask
-import matplotlib.pyplot as plt
+
 
 def predict_img(net,
-                full_img,
+                full_img: np.ndarray,
                 device,
                 scale_factor=1,
-                out_threshold=0.5):
+                out_threshold=0.5) -> np.ndarray:
     net.eval()
-    img = torch.from_numpy(np.asarray(full_img.convert("RGB")).copy())
-    img = img.unsqueeze(0).permute(0,3,1,2)
+    img = torch.from_numpy(full_img)
+    img = img.permute(2,0,1).unsqueeze(0)
     img = img.to(device=device, dtype=torch.float32)
     print(f"Shape tensor de entrada em predict_img(): {img.shape}")
 
@@ -28,17 +27,14 @@ def predict_img(net,
         output = net(img).cpu()
         print(f"Shape saida da rede: {output.shape}")
         
-        # plt.imshow(output.squeeze().permute(1,2,0)[:, :, 1]); plt.show()
-        output = F.interpolate(output, (full_img.size[1], full_img.size[0]), mode='bilinear')
+        output = F.interpolate(output, (full_img.shape[1], full_img.shape[0]), mode='bilinear')
         if net.n_classes > 1:
             mask = output.argmax(dim=1)
-            print(f"Shape mask: {mask.shape}")
-            plt.imshow(mask.squeeze(), cmap='gray'); plt.show()
         else:
             mask = torch.sigmoid(output) > out_threshold
     
-    print(f"Shape objeto numpy retornado em predict_img(): {mask[0].long().squeeze().numpy().shape}")
-    return mask[0].long().squeeze().numpy() 
+    print(f"Shape objeto numpy retornado em predict_img(): {mask.squeeze().shape}")
+    return mask.long().squeeze().numpy()
 
 
 def get_args():
@@ -48,8 +44,8 @@ def get_args():
     parser.add_argument('--input', '-i', metavar='INPUT', nargs='+', help='Filenames of input images', required=True)
     parser.add_argument('--output', '-o', metavar='OUTPUT', nargs='+', help='Filenames of output images')
     parser.add_argument('--viz', '-v', action='store_true',
-                        help='Visualize the images as they are processed')
-    parser.add_argument('--no-save', '-n', action='store_true', help='Do not save the output masks')
+                        help='Visualize the images as they are processed') ####
+    parser.add_argument('--no-save', '-n', action='store_true', help='Do not save the output masks') 
     parser.add_argument('--mask-threshold', '-t', type=float, default=0.5,
                         help='Minimum probability value to consider a mask pixel white')
     parser.add_argument('--scale', '-s', type=float, default=0.5,
@@ -61,15 +57,10 @@ def get_args():
 
 
 def get_output_filenames(args):
-    def _generate_name(fn):
-        return f'{os.path.splitext(fn)[0]}_OUT.png'
+    def _generate_name(filename: Path):
+        return str(filename.with_suffix('_OUT.png'))
 
     return args.output or list(map(_generate_name, args.input))
-
-# Retorna a imagem como PIL Image
-def mask_to_image(mask: np.ndarray):
-    mask = np.uint8(mask)
-    return Image.fromarray(mask)
 
 if __name__ == '__main__':
     args = get_args()
@@ -92,8 +83,8 @@ if __name__ == '__main__':
     # Para cada imagem de entrada...
     for i, filename in enumerate(in_files):
         logging.info(f'Predicting image {filename} ...')
-        # Carrega a imagem com pillow
-        img = Image.open(filename)
+        # Carrega a imagem com opencv
+        img = cv2.resize(cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB), (224,224))
 
         # Retorna a mascara predita como objeto numpy
         mask = predict_img(net=net,
@@ -104,13 +95,11 @@ if __name__ == '__main__':
 
         if not args.no_save:
             out_filename = out_files[i]
-            print(f"out_filename: {out_filename}")
-            result = mask_to_image(mask)
-            print(f"Shape result: {result.size}")
-            result.save(out_filename)
+            cv2.imwrite(out_filename, mask)
             logging.info(f'Mask saved to {out_filename}')
 
         if args.viz:
             logging.info(f'Visualizing results for image {filename}, close to continue...')
-            print(type(img), type(mask))
-            plot_img_and_mask(img, mask)
+            b_img = torch.from_numpy(img).permute(2,0,1).unsqueeze(0)
+            b_mask = torch.from_numpy(mask).unsqueeze(0).unsqueeze(0)
+            plot_img_and_mask(b_img, b_mask)

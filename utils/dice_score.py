@@ -29,4 +29,5 @@ def multiclass_dice_coeff(true_mask: Tensor, pred: Tensor, reduce_batch_first: b
 def dice_loss(true_mask: Tensor, pred: Tensor, multiclass: bool = False):
     # Dice loss (objective to minimize) between 0 and 1
     fn = multiclass_dice_coeff if multiclass else dice_coeff
+    print(f"\nResultado dice_loss: {fn(true_mask, pred, reduce_batch_first=True)}\n")
     return 1 - fn(true_mask, pred, reduce_batch_first=True) # é assim porque grande perda é ruim para o modelo

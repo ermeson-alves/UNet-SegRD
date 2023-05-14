@@ -31,25 +31,6 @@ if not Path("./checkpoints").exists():
 dir_checkpoint = Path("./checkpoints")
 
 
-transformations = {
-    'test': transforms.Compose([
-                        # transforms.ToPILImage(),
-                        transforms.Resize((224,224)),
-#                         transforms.Grayscale(1),
-                        # transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-                        # transforms.ToTensor()]),
-                        ]),
-     'train': transforms.Compose([
-                        #    transforms.ToPILImage(),
-                           transforms.Resize(size=(224,224), antialias=True),
-                           transforms.RandomRotation(degrees = 45), 
-                           transforms.RandomHorizontalFlip(p = 0.005),
-                        #    transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-                        #    transforms.Grayscale(1),
-                        #    transforms.ToTensor()
-                           ])
-}
-
 
 def train_model(
         model,
@@ -126,12 +107,12 @@ def train_model(
                     'the images are loaded correctly.'
 
                 images = images.to(device=device, dtype=torch.float32, memory_format=torch.channels_last)
-                true_masks = true_masks.to(device=device, dtype=torch.long).squeeze()
+                true_masks = true_masks.to(device=device, dtype=torch.long)
 
                 print(f"b_imgs shape: {images.shape} ----- b_masks shape: {true_masks.shape}")
                 with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=amp):
                     masks_pred = model(images)
-                    print(f"b_masks_pred shape: {masks_pred.shape}")
+                    print(f"b_masks_pred shape: {masks_pred.shape}\tvalues_in_pred: {masks_pred.unique()}")
                     if model.n_classes == 1:
                         loss = criterion(masks_pred.squeeze(1), true_masks.float())
                         loss += dice_loss(F.sigmoid(masks_pred.squeeze(1)), true_masks.float(), multiclass=False)

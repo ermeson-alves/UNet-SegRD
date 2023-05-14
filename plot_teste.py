@@ -5,7 +5,6 @@ from utils.transformations import *
 import albumentations
 
 
-
 # training transformations and augmentations
 transforms_training = ComposeDouble([
     AlbuSeg2d(albumentations.HorizontalFlip(p=0.5)),
@@ -14,14 +13,14 @@ transforms_training = ComposeDouble([
     FunctionWrapperDouble(normalize_01),
 ])
 
-
 # # validation transformations
 # transforms_validation = ComposeDouble([
 #     FunctionWrapperDouble(create_dense_target, input=False, target=True),
 #     FunctionWrapperDouble(np.moveaxis, input=True, target=False, source=-1, destination=0),
 #     FunctionWrapperDouble(normalize_01)
 # ])
-# train_set = utils.DIARETDBDataset(IMGS_FUNDUS_PATH, MASKS_DIR_PATH, 0, transform=transformations['train'])
+
+
 train_set = utils.IDRIDDataset(TRAINSET_IMGS, TRAINSET_DIR_MASKS, 2, transform=transforms_training)
 
 # print de uma amostra

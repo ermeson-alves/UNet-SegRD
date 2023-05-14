@@ -1,0 +1,1 @@
+Repositório para os checkpoints do Modelo treinado (parametros aprendidos)

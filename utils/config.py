@@ -31,6 +31,6 @@ MEAN_STD_LESIONS_TRAIN = {'MA':([116.2852,  56.3344,  16.0175], [82.1312, 42.634
                           'OD':([116.7937,  56.4556,  16.1290], [82.6207, 42.7140, 21.7858])}
 
 # Hiperparametros:
-EPOCHS = 50
+EPOCHS = 5
 BATCH_SIZE = 4
 LEARNING_RATE = 1e-3

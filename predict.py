@@ -77,6 +77,7 @@ if __name__ == '__main__':
 
     # Carregando os checkpoints do modelo
     state_dict = torch.load(args.model, map_location=device)
+    print(state_dict)
     net.load_state_dict(state_dict)
     logging.info('Model loaded!')
 

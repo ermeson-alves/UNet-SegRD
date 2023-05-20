@@ -22,8 +22,8 @@ def get_mean_and_std(dataloader):
     channels_sum, channels_squared_sum, num_batches = 0, 0, 0
     for data in dataloader:
         # Mean over batch, height and width, but not over the channels
-        channels_sum += torch.mean(data['image'], dim=[0,2,3])
-        channels_squared_sum += torch.mean(data['image']**2, dim=[0,2,3])
+        channels_sum += torch.mean(data['image'].float(), dim=[0,2,3])
+        channels_squared_sum += torch.mean(data['image'].float()**2, dim=[0,2,3])
         num_batches += 1
     
     mean = channels_sum / num_batches

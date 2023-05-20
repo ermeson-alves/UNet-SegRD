@@ -9,3 +9,8 @@
 **/desktop.ini
 **/*.pth
 **/wandb
+**/lighting_logs
+**/checkpoints_unet
+.gitignore
+**/checkpoints*
+\!checkpoint_epoch1.pth
